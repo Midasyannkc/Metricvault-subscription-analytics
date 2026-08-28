@@ -1,0 +1,18 @@
+metricvault:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: metricvault.duckdb
+      schema: main
+      # In production this profile points at Snowflake (matching the
+      # target role's stack); DuckDB is used here so the project is
+      # fully runnable and verifiable without a live warehouse.
+      #
+      # Production equivalent:
+      #   type: snowflake
+      #   account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      #   user: "{{ env_var('SNOWFLAKE_USER') }}"
+      #   role: TRANSFORMER
+      #   database: ANALYTICS
+      #   warehouse: TRANSFORMING

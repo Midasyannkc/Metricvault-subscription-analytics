@@ -1,0 +1,99 @@
+version: 2
+
+sources:
+  - name: finance
+    description: >
+      Finance's independently-recorded revenue ledger (synthetic stand-in
+      for a NetSuite GL export), landed by Finance's own ingestion process,
+      intentionally separate from the Stripe pipeline so this source is a
+      true independent check, not a copy of the same numbers.
+    schema: raw_finance
+    tables:
+      - name: monthly_revenue_ledger
+
+models:
+  - name: dim_plan
+    description: Plan/price reference dimension, monthly-normalized MRR for every billing interval.
+    columns:
+      - name: plan_id
+        tests: [unique, not_null]
+
+  - name: dim_customer
+    description: One row per customer, the grain for cohort-based retention analysis.
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+
+  - name: fct_mrr_movements
+    description: >
+      CERTIFIED. One row per customer per month per MRR movement type
+      (new/expansion/contraction/churned/reactivation). Source of truth
+      for the ARR/MRR bridge metric group in the semantic layer.
+    columns:
+      - name: movement_id
+        tests: [unique, not_null]
+      - name: movement_type
+        tests:
+          - accepted_values:
+              values: ['new', 'expansion', 'contraction', 'churned', 'reactivation']
+
+  - name: fct_subscription_revenue
+    description: >
+      CERTIFIED. Monthly customer-level MRR snapshot. Source of truth
+      for Net Revenue Retention and Logo Retention cohort metrics.
+    columns:
+      - name: mrr_usd
+        tests: [not_null]
+
+  - name: fct_finance_reconciliation
+    description: >
+      SOX control table. Compares data-team-derived ARR against
+      Finance's independently-recorded ledger. A 'FAIL' control_status
+      blocks certified-metric sign-off for that month, see
+      sox/reconciliation_control.md.
+    columns:
+      - name: control_status
+        tests:
+          - accepted_values:
+              values: ['PASS', 'FAIL: exceeds 2% control threshold']
+
+exposures:
+  - name: tableau_arr_mrr_bridge
+    label: "ARR/MRR Bridge Dashboard"
+    type: dashboard
+    maturity: high
+    url: https://tableau.internal/arr-mrr-bridge
+    description: >
+      Executive-facing ARR/MRR waterfall. Reads exclusively from
+      fct_mrr_movements via the MetricFlow semantic layer, never
+      queries staging or raw tables directly.
+    depends_on:
+      - ref('fct_mrr_movements')
+    owner:
+      name: Analytics Engineering
+      email: analytics-eng@example.com
+
+  - name: tableau_retention_cohorts
+    label: "NRR & Logo Retention Cohorts"
+    type: dashboard
+    maturity: high
+    url: https://tableau.internal/retention-cohorts
+    depends_on:
+      - ref('fct_subscription_revenue')
+      - ref('dim_customer')
+    owner:
+      name: Analytics Engineering
+      email: analytics-eng@example.com
+
+  - name: finance_close_reconciliation
+    label: "Monthly Finance Close Reconciliation"
+    type: analysis
+    maturity: high
+    description: >
+      Reviewed by Finance during monthly close. A FAIL control_status
+      here is a blocking issue for certifying that month's ARR metric.
+    depends_on:
+      - ref('fct_finance_reconciliation')
+    owner:
+      name: Analytics Engineering
+      email: analytics-eng@example.com

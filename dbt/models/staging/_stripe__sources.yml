@@ -1,0 +1,83 @@
+version: 2
+
+sources:
+  - name: stripe
+    description: >
+      Raw Stripe objects landed by the Dagster stripe_extract asset.
+      Immutable, append-only in RAW schema, never modified after landing,
+      this immutability is itself a SOX control preserving the original
+      source record (see sox/access_control.md).
+    schema: raw_stripe
+    tables:
+      - name: customers
+      - name: subscriptions
+      - name: plan_changes
+      - name: invoices
+      - name: charges
+      - name: refunds
+
+models:
+  - name: stg_stripe__customers
+    description: One row per Stripe Customer object, typed and renamed.
+    columns:
+      - name: customer_id
+        description: Stripe customer ID, the grain of this model.
+        tests: [unique, not_null]
+      - name: customer_created_date
+        tests: [not_null]
+
+  - name: stg_stripe__subscriptions
+    description: >
+      One row per subscription lifecycle event (a subscription appears
+      once while active, and again with status=canceled if it churns).
+    columns:
+      - name: subscription_id
+        tests: [not_null]
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_stripe__customers')
+              field: customer_id
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['active', 'canceled']
+
+  - name: stg_stripe__plan_changes
+    description: Upgrade/downgrade events, the raw input to expansion/contraction MRR movement classification.
+    columns:
+      - name: change_id
+        tests: [unique, not_null]
+      - name: subscription_id
+        tests: [not_null]
+
+  - name: stg_stripe__invoices
+    description: One row per billing-period invoice.
+    columns:
+      - name: invoice_id
+        tests: [unique, not_null]
+      - name: amount_due
+        tests: [not_null]
+
+  - name: stg_stripe__charges
+    description: One row per successful or attempted charge against an invoice.
+    columns:
+      - name: charge_id
+        tests: [unique, not_null]
+      - name: invoice_id
+        tests:
+          - relationships:
+              to: ref('stg_stripe__invoices')
+              field: invoice_id
+
+  - name: stg_stripe__refunds
+    description: One row per refund issued against a charge.
+    columns:
+      - name: refund_id
+        tests: [unique, not_null]
+      - name: charge_id
+        tests:
+          - relationships:
+              to: ref('stg_stripe__charges')
+              field: charge_id

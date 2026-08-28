@@ -1,0 +1,89 @@
+metrics:
+  # ---- Certified ARR/MRR metrics, the single source of truth ----
+  - name: mrr
+    description: "CERTIFIED. Total Monthly Recurring Revenue as of the snapshot month. Owner: Analytics Engineering."
+    type: simple
+    label: MRR
+    type_params:
+      measure: mrr_usd
+
+  - name: arr
+    description: "CERTIFIED. Annual Recurring Revenue, MRR annualized. Owner: Analytics Engineering."
+    type: derived
+    label: ARR
+    type_params:
+      expr: mrr * 12
+      metrics:
+        - name: mrr
+
+  - name: paying_customer_count
+    description: "CERTIFIED. Count of customers with MRR > 0 as of the snapshot month."
+    type: simple
+    label: Paying Customers
+    type_params:
+      measure: active_customer_count
+
+  # ---- MRR movement metrics, back the bridge/waterfall chart ----
+  - name: new_mrr
+    description: "CERTIFIED. MRR from first-time subscriptions this month."
+    type: simple
+    label: New MRR
+    type_params:
+      measure: mrr_delta
+    filter: |
+      {{ Dimension('movement__movement_type') }} = 'new'
+
+  - name: expansion_mrr
+    description: "CERTIFIED. MRR added from existing customers upgrading."
+    type: simple
+    label: Expansion MRR
+    type_params:
+      measure: mrr_delta
+    filter: |
+      {{ Dimension('movement__movement_type') }} = 'expansion'
+
+  - name: contraction_mrr
+    description: "CERTIFIED. MRR lost from existing customers downgrading."
+    type: simple
+    label: Contraction MRR
+    type_params:
+      measure: mrr_delta
+    filter: |
+      {{ Dimension('movement__movement_type') }} = 'contraction'
+
+  - name: churned_mrr
+    description: "CERTIFIED. MRR lost from full cancellations."
+    type: simple
+    label: Churned MRR
+    type_params:
+      measure: mrr_delta
+    filter: |
+      {{ Dimension('movement__movement_type') }} = 'churned'
+
+  - name: reactivation_mrr
+    description: "CERTIFIED. MRR from customers returning after a prior churn."
+    type: simple
+    label: Reactivation MRR
+    type_params:
+      measure: mrr_delta
+    filter: |
+      {{ Dimension('movement__movement_type') }} = 'reactivation'
+
+  - name: net_new_mrr
+    description: "CERTIFIED. Net MRR change for the month, sum of all movement types. Should reconcile exactly to month-over-month change in the `mrr` metric."
+    type: simple
+    label: Net New MRR
+    type_params:
+      measure: mrr_delta
+
+  # ---- SOX control metric ----
+  - name: finance_reconciliation_variance
+    description: >
+      SOX control metric. Non-zero values indicate a gap between
+      data-team-derived ARR and Finance's independently recorded
+      ledger. Reviewed at every monthly close, see
+      sox/reconciliation_control.md.
+    type: simple
+    label: Finance Reconciliation Variance ($)
+    type_params:
+      measure: variance_usd

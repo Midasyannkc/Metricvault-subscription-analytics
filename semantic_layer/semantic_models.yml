@@ -1,0 +1,87 @@
+semantic_models:
+  - name: mrr_movements
+    description: >
+      Semantic model over the certified fct_mrr_movements table.
+      Every ARR/MRR metric in this project resolves to this one model,
+      so "expansion MRR" means exactly one thing everywhere it's used
+      (Tableau, ad hoc SQL, or a future self-service tool).
+    model: ref('fct_mrr_movements')
+    defaults:
+      agg_time_dimension: movement_month
+
+    entities:
+      - name: movement
+        type: primary
+        expr: movement_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+
+    dimensions:
+      - name: movement_month
+        type: time
+        type_params:
+          time_granularity: month
+      - name: movement_type
+        type: categorical
+
+    measures:
+      - name: mrr_delta
+        description: Signed monthly MRR change for this movement row.
+        agg: sum
+        expr: mrr_delta
+
+  - name: subscription_revenue
+    description: >
+      Semantic model over fct_subscription_revenue, the monthly
+      customer-level MRR snapshot. Backs point-in-time metrics (current
+      MRR, active customer count) as opposed to the movement-based
+      metrics above.
+    model: ref('fct_subscription_revenue')
+    defaults:
+      agg_time_dimension: snapshot_month
+
+    entities:
+      - name: subscription_snapshot
+        type: primary
+        expr: "customer_id || '-' || snapshot_month"
+      - name: customer
+        type: foreign
+        expr: customer_id
+
+    dimensions:
+      - name: snapshot_month
+        type: time
+        type_params:
+          time_granularity: month
+      - name: is_active
+        type: categorical
+
+    measures:
+      - name: mrr_usd
+        agg: sum
+        expr: mrr_usd
+      - name: active_customer_count
+        agg: sum
+        expr: "case when is_active then 1 else 0 end"
+
+  - name: finance_reconciliation
+    description: SOX control semantic model, backs the reconciliation variance metric reviewed at monthly close.
+    model: ref('fct_finance_reconciliation')
+    defaults:
+      agg_time_dimension: month
+    entities:
+      - name: reconciliation_month
+        type: primary
+        expr: month
+    dimensions:
+      - name: month
+        type: time
+        type_params:
+          time_granularity: month
+      - name: control_status
+        type: categorical
+    measures:
+      - name: variance_usd
+        agg: sum
+        expr: variance_usd

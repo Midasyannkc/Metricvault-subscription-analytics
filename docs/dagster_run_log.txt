@@ -1,0 +1,8 @@
+2026-08-26 06:53:30 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 513 - stripe_extract - ASSET_MATERIALIZATION - Materialized value stripe_extract.
+2026-08-26 06:53:37 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 522 - dbt_build - ASSET_MATERIALIZATION - Materialized value dbt_build.
+2026-08-26 06:53:38 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 539 - dbt_build_finance_reconciliation_check - ASSET_CHECK_EVALUATION - Asset check 'finance_reconciliation_check' on 'dbt_build' did not pass. Description: '2 month(s) exceed the 2% reconciliation threshold: 2025-07-01 00:00:00: -3.7%; 2026-03-01 00:00:00: -2.5%'
+2026-08-26 06:53:44 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 547 - dbt_docs - ASSET_MATERIALIZATION - Materialized value dbt_docs.
+2026-08-26 06:53:46 +0000 - dagster - INFO - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - semantic_layer_refresh - Validated 9 simple metrics against 4 defined measures
+2026-08-26 06:53:46 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 564 - semantic_layer_refresh - ASSET_MATERIALIZATION - Materialized value semantic_layer_refresh.
+2026-08-26 06:53:47 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 572 - tableau_extract_refresh - ASSET_MATERIALIZATION - Materialized value tableau_extract_refresh.
+2026-08-26 06:53:48 +0000 - dagster - DEBUG - __ASSET_JOB - f064a8b0-8194-433d-a980-9c876f8738c0 - 508 - RUN_SUCCESS - Finished execution of run for "__ASSET_JOB".
